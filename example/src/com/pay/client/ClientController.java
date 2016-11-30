@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.alibaba.fastjson.JSONObject;
 import com.pay.api.PayClient;
+import com.pay.api.bean.request.DetailBean;
 import com.pay.api.bean.request.PayMentBean;
 import com.pay.api.bean.request.ProrateBean;
 import com.pay.api.bean.request.RefundBean;
@@ -109,6 +110,34 @@ public class ClientController {
 		String payUrl = client.payment(request);
 		response.sendRedirect(payUrl);
 	}
+	
+
+	
+	
+	/**
+	 * 执行支付请求
+	 * 
+	 * @param response
+	 *            响应参数对象
+	 * @param request
+	 *            支付请求参数
+	 * @throws Exception
+	 * @return void
+	 * @exception
+	 * @since 1.0.0
+	 */
+	@RequestMapping("/getorder.do")
+	@ResponseBody
+	public void getorder(PayMentBean request, HttpServletResponse response)
+			throws Exception {
+		request.setReturn_url(localhost + "/payment/callback.do");
+		request.setNotify_url(localhost + "/payment/notify.do");
+		request.setService("pay.auth.orders.logs");
+		request.setLimit_pay("orders");
+		request.setOut_trade_no("");
+		String payUrl = client.payment(request);
+	    System.out.println(payUrl);
+	}
 
 	/**
 	 * 支付接口同步回调入口
@@ -124,24 +153,28 @@ public class ClientController {
 	@RequestMapping("/payment/callback.do")
 	public String callback(HttpServletRequest request,
 			HttpServletResponse response, Model model) throws Exception {
-		PayMentResponse payMentResponse = (PayMentResponse) client.getReturn(
-				request.getParameter("info"), PayMentResponse.class);
+		LoggerUtil.info(this.getClass(), JsonUtil.objToJson(request.getParameterMap()));
+//		PayMentResponse payMentResponse = new PayMentResponse();
+//				(PayMentResponse) JsonUtil
+//				.jsonToBean(
+//						StringUtil.urlStrToString(request.getParameter("info")),
+//						PayMentResponse.class);
 
-		String message = "";
-		if (payMentResponse == null) {
-			message = "返回信息为空";
-		} else {
-			if (payMentResponse.getCode().equals("200")) {
-				message = "支付成功，返回结果如下:</br></br>"
-						+ JsonUtil.objToJson(payMentResponse);
-			} else {
-				message = "支付失败，返回结果如下:</br></br>"
-						+ JsonUtil.objToJson(payMentResponse);
-			}
-		}
+//		String message = "";
+//		if (payMentResponse == null) {
+//			message = "返回信息为空";
+//		} else {
+//			if (payMentResponse.getCode().equals("200")) {
+//				message = "支付成功，返回结果如下:</br></br>"
+//						+ JsonUtil.objToJson(payMentResponse);
+//			} else {
+//				message = "支付失败，返回结果如下:</br></br>"
+//						+ JsonUtil.objToJson(payMentResponse);
+//			}
+//		}
 
-		model.addAttribute("message", message);
-		LoggerUtil.info(this.getClass(), "冻结支付同步返回参数:" + message);
+		model.addAttribute("message", JsonUtil.objToJson(request.getParameterMap()));
+//		LoggerUtil.info(this.getClass(), "冻结支付同步返回参数:" + message);
 		return "/result";
 	}
 
@@ -159,21 +192,22 @@ public class ClientController {
 	@RequestMapping("/payment/notify.do")
 	public void notify(HttpServletRequest request, HttpServletResponse response)
 			throws Exception {
-		PayMentResponse payMentResponse = (PayMentResponse) client.getReturn(
-				request.getParameter("info"), PayMentResponse.class);
-		String message = "";
-		if (payMentResponse == null) {
-			message = "返回信息为空";
-		} else {
-			if (payMentResponse.getCode().equals("200")) {
-				message = "支付成功，返回结果如下:</br></br>"
-						+ JsonUtil.objToJson(payMentResponse);
-			} else {
-				message = "支付失败，返回结果如下:</br></br>"
-						+ JsonUtil.objToJson(payMentResponse);
-			}
-		}
-		LoggerUtil.info(this.getClass(), "支付异步通知参数:" + message);
+		LoggerUtil.info(this.getClass(), "支付异步通知参数:" + JsonUtil.objToJson(request.getParameterMap()));
+//		PayMentResponse payMentResponse = (PayMentResponse) client.getReturn(
+//				request.getParameter("info"), PayMentResponse.class);
+//		String message = "";
+//		if (payMentResponse == null) {
+//			message = "返回信息为空";
+//		} else {
+//			if (payMentResponse.getCode().equals("200")) {
+//				message = "支付成功，返回结果如下:</br></br>"
+//						+ JsonUtil.objToJson(payMentResponse);
+//			} else {
+//				message = "支付失败，返回结果如下:</br></br>"
+//						+ JsonUtil.objToJson(payMentResponse);
+//			}
+//		}
+//		LoggerUtil.info(this.getClass(), "支付异步通知参数:" + message);
 	}
 
 	/**
@@ -330,5 +364,54 @@ public class ClientController {
 		model.addAttribute("orders", list);
 
 		return "/list";
+	}
+	
+	
+	@RequestMapping("/orderlist")
+	public String orderlist(){
+		return "/orderselect";
+		}
+	
+	/**
+	 * 执行流水查询请求
+	 * 
+	 * @param response
+	 *            响应参数对象
+	 * @param request
+	 *            支付请求参数
+	 * @throws Exception
+	 * @return void
+	 * @exception
+	 * @since 1.0.0
+	 */
+	@RequestMapping("/orderslist.do")
+	public String orderslist(DetailBean request, HttpServletResponse response)
+			throws Exception {
+		request.setService("pay.auth.orders.logs");
+		String payUrl = client.getorders(request);
+		return payUrl;
+	}
+	
+	/**
+	 * 执行流水查询请求
+	 * 
+	 * @param response
+	 *            响应参数对象
+	 * @param request
+	 *            支付请求参数
+	 * @throws Exception
+	 * @return void
+	 * @exception
+	 * @since 1.0.0
+	 */
+	@RequestMapping("/orderlistlogs.do")
+	public String orderlistlogs(DetailBean request, HttpServletResponse response,Model model) throws Exception{
+		request.setService("pay.auth.orders.logs");
+		LoggerUtil.info(this.getClass(), "请求订单流水参数：" + request.toUrlEncode());
+		String result = client.getorders(request);
+		LoggerUtil.info(this.getClass(), "获取订单流水信息：" + result);
+		List<PayMentResponse> list = JSONObject.parseArray(result,PayMentResponse.class);
+		model.addAttribute("list",list);
+		return "/orderlist";
 	}
 }
